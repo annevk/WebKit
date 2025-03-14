@@ -2413,11 +2413,12 @@ void WebPageProxy::navigateToPDFLinkWithSimulatedClick(const String& urlString, 
         return;
     }
 
-    if (WTF::protocolIsJavaScript(urlString))
+    URL url(urlString);
+    if (url.protocolIsJavaScript())
         return;
 
     if (!hasRunningProcess())
-        launchProcess(Site { URL { urlString } }, ProcessLaunchReason::InitialProcess);
+        launchProcess(Site { url }, ProcessLaunchReason::InitialProcess);
 
     send(Messages::WebPage::NavigateToPDFLinkWithSimulatedClick(urlString, documentPoint, screenPoint));
     protectedLegacyMainFrameProcess()->startResponsivenessTimer();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2023 Apple Inc. All rights reserved.
+ * Copyright (C) 2006-2025 Apple Inc. All rights reserved.
  * Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies)
  *
  * Redistribution and use in source and binary forms, with or without
@@ -2476,7 +2476,7 @@ void LocalDOMWindow::setLocation(LocalDOMWindow& activeWindow, const URL& comple
     if (navigationState == CanNavigateState::Unable)
         return;
 
-    if (isInsecureScriptAccess(activeWindow, completedURL.string()))
+    if (isInsecureScriptAccess(activeWindow, completedURL))
         return;
 
     // Check the CSP of the embedder to determine if we allow execution of javascript: URLs via child frame navigation.
@@ -2559,9 +2559,9 @@ String LocalDOMWindow::crossDomainAccessErrorMessage(const LocalDOMWindow& activ
     return makeString(message, "Protocols, domains, and ports must match."_s);
 }
 
-bool LocalDOMWindow::isInsecureScriptAccess(LocalDOMWindow& activeWindow, const String& urlString)
+bool LocalDOMWindow::isInsecureScriptAccess(LocalDOMWindow& activeWindow, const URL& url)
 {
-    if (!WTF::protocolIsJavaScript(urlString))
+    if (!url.protocolIsJavaScript())
         return false;
 
     // If this LocalDOMWindow isn't currently active in the Frame, then there's no
@@ -2640,7 +2640,7 @@ ExceptionOr<RefPtr<Frame>> LocalDOMWindow::createWindow(const String& urlString,
     }
 
     RefPtr localNewFrame = dynamicDowncast<LocalFrame>(newFrame);
-    if (localNewFrame && localNewFrame->document()->protectedWindow()->isInsecureScriptAccess(activeWindow, completedURL.string()))
+    if (localNewFrame && localNewFrame->document()->protectedWindow()->isInsecureScriptAccess(activeWindow, completedURL))
         return noopener ? RefPtr<Frame> { nullptr } : newFrame;
 
     if (prepareDialogFunction && localNewFrame)
@@ -2726,7 +2726,7 @@ ExceptionOr<RefPtr<WindowProxy>> LocalDOMWindow::open(LocalDOMWindow& activeWind
         URL completedURL = firstFrame->protectedDocument()->completeURL(urlString);
 
         RefPtr localTargetFrame = dynamicDowncast<LocalFrame>(targetFrame.get());
-        if (localTargetFrame && localTargetFrame->document()->protectedWindow()->isInsecureScriptAccess(activeWindow, completedURL.string()))
+        if (localTargetFrame && localTargetFrame->document()->protectedWindow()->isInsecureScriptAccess(activeWindow, completedURL))
             return &targetFrame->windowProxy();
 
         if (urlString.isEmpty())

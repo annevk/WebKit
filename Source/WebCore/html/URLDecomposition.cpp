@@ -39,10 +39,7 @@ String URLDecomposition::origin() const
 
 String URLDecomposition::protocol() const
 {
-    auto fullURL = this->fullURL();
-    if (WTF::protocolIsJavaScript(fullURL.string()))
-        return "javascript:"_s;
-    return makeString(fullURL.protocol(), ':');
+    return makeString(this->fullURL().protocol(), ':');
 }
 
 void URLDecomposition::setProtocol(StringView value)
