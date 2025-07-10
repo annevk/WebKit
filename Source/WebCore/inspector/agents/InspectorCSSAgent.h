@@ -88,7 +88,7 @@ public:
         }
 
     private:
-        ContentSecurityPolicy* m_contentSecurityPolicy;
+        const CheckedPtr<ContentSecurityPolicy> m_contentSecurityPolicy;
     };
 
     static std::optional<Inspector::Protocol::CSS::PseudoId> protocolValueForPseudoId(PseudoId);

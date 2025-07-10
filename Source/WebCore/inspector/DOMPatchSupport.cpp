@@ -64,7 +64,7 @@ struct DOMPatchSupport::Digest {
 
     String sha1;
     String attrsSHA1;
-    Node* node;
+    CheckedPtr<Node> node;
     Vector<std::unique_ptr<Digest>> children;
 };
 
@@ -384,7 +384,7 @@ ExceptionOr<void> DOMPatchSupport::innerPatchChildren(ContainerNode& parentNode,
     for (size_t i = 0; i < oldMap.size(); ++i) {
         if (!oldMap[i].first)
             continue;
-        RefPtr<Node> node = oldMap[i].first->node;
+        RefPtr node = oldMap[i].first->node.get();
         auto* anchorNode = parentNode.traverseToChildAt(oldMap[i].second);
         if (node == anchorNode)
             continue;

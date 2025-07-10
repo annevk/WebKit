@@ -152,7 +152,7 @@ private:
 
     // Lazy, but also on-demand agents.
     Inspector::InspectorAgent* m_inspectorAgent { nullptr };
-    InspectorDOMAgent* m_domAgent { nullptr };
+    CheckedPtr<InspectorDOMAgent> m_domAgent;
     InspectorPageAgent* m_pageAgent { nullptr };
 
     bool m_isUnderTest { false };

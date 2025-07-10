@@ -13,12 +13,7 @@ editing/TextCheckingHelper.h
 editing/VisiblePosition.h
 html/HTMLLinkElement.h
 html/parser/HTMLTreeBuilder.h
-inspector/DOMPatchSupport.cpp
-inspector/InspectorController.h
-inspector/InspectorStyleSheet.cpp
 inspector/InstrumentingAgents.h
-inspector/agents/InspectorCSSAgent.h
-inspector/agents/InspectorDOMAgent.cpp
 inspector/agents/WebHeapAgent.cpp
 layout/formattingContexts/flex/FlexFormattingContext.h
 layout/formattingContexts/inline/AbstractLineBuilder.h

@@ -34,14 +34,11 @@ editing/cocoa/HTMLConverter.mm
 html/FormListedElement.cpp
 html/parser/HTMLTreeBuilder.h
 html/track/TrackBase.h
-inspector/DOMPatchSupport.cpp
 inspector/InspectorFrontendHost.cpp
 inspector/InspectorFrontendHost.h
 inspector/InspectorShaderProgram.h
-inspector/InspectorStyleSheet.cpp
 inspector/InspectorStyleSheet.h
 inspector/InspectorWebAgentBase.h
-inspector/agents/worker/WorkerAuditAgent.h
 layout/formattingContexts/inline/InlineItemsBuilder.h
 loader/appcache/ApplicationCacheStorage.cpp
 page/FrameSnapshotting.cpp

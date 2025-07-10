@@ -47,11 +47,11 @@ private:
 
     void sendMessageToFrontend(const String& message) override
     {
-        if (auto* workerDebuggerProxy = m_globalScope.workerOrWorkletThread()->workerDebuggerProxy())
+        if (auto* workerDebuggerProxy = m_globalScope->workerOrWorkletThread()->workerDebuggerProxy())
             workerDebuggerProxy->postMessageToDebugger(message);
     }
 
-    WorkerOrWorkletGlobalScope& m_globalScope;
+    WeakRef<WorkerOrWorkletGlobalScope> m_globalScope;
 };
 
 } // namespace WebCore
