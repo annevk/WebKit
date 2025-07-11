@@ -16,7 +16,6 @@ Modules/push-api/PushDatabase.cpp
 Modules/storage/WorkerStorageConnection.cpp
 Modules/webaudio/AudioWorkletGlobalScope.cpp
 Modules/webdatabase/SQLStatement.cpp
-Modules/websockets/WebSocket.cpp
 accessibility/AXCoreObject.cpp
 accessibility/AXObjectCache.cpp
 accessibility/AXTextMarker.cpp

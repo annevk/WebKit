@@ -40,8 +40,6 @@ Modules/webdatabase/DatabaseTracker.cpp
 Modules/webdatabase/LocalDOMWindowWebDatabase.cpp
 Modules/webdatabase/SQLStatement.cpp
 Modules/webdatabase/SQLTransaction.cpp
-Modules/websockets/WebSocketChannelInspector.cpp
-Modules/websockets/WorkerThreadableWebSocketChannel.cpp
 StyleBuilderGenerated.cpp
 StyleExtractorGenerated.cpp
 accessibility/AXImage.cpp

@@ -34,6 +34,7 @@
 #include "WebSocketChannelClient.h"
 #include "WorkerGlobalScope.h"
 #include "WorkerLoaderProxy.h"
+#include <wtf/CheckedRef.h>
 #include <wtf/RefCounted.h>
 #include <wtf/RefPtr.h>
 #include <wtf/TZoneMalloc.h>
@@ -146,9 +147,11 @@ private:
         // Executed on the worker context's thread.
         void clearClientWrapper();
 
+        CheckedPtr<WorkerLoaderProxy> checkedLoaderProxy();
+
         const Ref<ThreadableWebSocketChannelClientWrapper> m_workerClientWrapper;
         RefPtr<WorkerGlobalScope> m_workerGlobalScope;
-        WorkerLoaderProxy& m_loaderProxy;
+        WeakPtr<WorkerLoaderProxy> m_loaderProxy;
         String m_taskMode;
         ThreadSafeWeakPtr<Peer> m_peer;
         const Ref<SocketProvider> m_socketProvider;

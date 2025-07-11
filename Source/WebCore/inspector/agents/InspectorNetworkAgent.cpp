@@ -882,7 +882,7 @@ Inspector::Protocol::ErrorStringOr<void> InspectorNetworkAgent::enable()
             if (!document)
                 continue;
 
-            auto channel = webSocket->channel();
+            RefPtr channel = webSocket->channel();
 
             auto identifier = channel->progressIdentifier();
             didCreateWebSocket(identifier, webSocket->url());

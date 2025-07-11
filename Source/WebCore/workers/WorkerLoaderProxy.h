@@ -31,6 +31,7 @@
 #pragma once
 
 #include "ScriptExecutionContext.h"
+#include <wtf/CanMakeWeakPtr.h>
 
 namespace WebCore {
 
@@ -40,7 +41,7 @@ struct ReportingClient;
 
 // A proxy to talk to the loader context. Normally, the document on the main thread
 // provides loading services for the subordinate workers.
-class WorkerLoaderProxy {
+class WorkerLoaderProxy : public CanMakeWeakPtr<WorkerLoaderProxy> {
 public:
     virtual ~WorkerLoaderProxy() = default;
 

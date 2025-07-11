@@ -82,7 +82,8 @@ public:
 
     ExceptionOr<void> close(std::optional<unsigned short> code, const String& reason);
 
-    RefPtr<ThreadableWebSocketChannel> channel() const;
+    ThreadableWebSocketChannel* channel() const;
+    RefPtr<ThreadableWebSocketChannel> protectedChannel() const;
 
     const URL& url() const;
     State readyState() const;
