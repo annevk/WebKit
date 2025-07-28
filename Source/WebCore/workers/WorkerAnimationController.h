@@ -66,6 +66,8 @@ private:
     void animationTimerFired();
     void serviceRequestAnimationFrameCallbacks(DOMHighResTimeStamp timestamp);
 
+    Ref<WorkerGlobalScope> protectedWorkerGlobalScope() { return m_workerGlobalScope.get(); }
+
     WeakRef<WorkerGlobalScope, WeakPtrImplWithEventTargetData> m_workerGlobalScope;
 
     typedef Vector<RefPtr<RequestAnimationFrameCallback>> CallbackList;

@@ -210,10 +210,12 @@ MessageQueueWaitResult WorkerDedicatedRunLoop::runInMode(WorkerOrWorkletGlobalSc
     timeoutDelay = std::max(0_s, Seconds(timeUntilNextCFRunLoopTimerInSeconds));
 #endif
 
+    CheckedPtr script = context->script();
+
 #if OS(WINDOWS)
     RunLoop::cycle();
 
-    if (auto* script = context->script()) {
+    if (script) {
         JSC::VM& vm = script->vm();
         timeoutDelay = vm.deferredWorkTimer->timeUntilFire().value_or(Seconds::infinity());
     }
@@ -222,13 +224,13 @@ MessageQueueWaitResult WorkerDedicatedRunLoop::runInMode(WorkerOrWorkletGlobalSc
     if (predicate.isDefaultMode() && m_sharedTimer->isActive())
         timeoutDelay = std::min(timeoutDelay, m_sharedTimer->fireTimeDelay());
 
-    if (auto* script = context->script()) {
+    if (script) {
         script->releaseHeapAccess();
         script->addTimerSetNotification(timerAddedTask);
     }
     MessageQueueWaitResult result;
     auto task = m_messageQueue.waitForMessageFilteredWithTimeout(result, predicate, timeoutDelay);
-    if (auto* script = context->script()) {
+    if (script) {
         script->acquireHeapAccess();
         script->removeTimerSetNotification(timerAddedTask);
     }

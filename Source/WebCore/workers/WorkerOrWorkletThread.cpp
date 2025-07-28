@@ -145,7 +145,7 @@ void WorkerOrWorkletThread::workerOrWorkletThread()
     g_main_context_push_thread_default(mainContext.get());
 #endif
 
-    WorkerOrWorkletScriptController* scriptController;
+    CheckedPtr<WorkerOrWorkletScriptController> scriptController;
     {
         // Mutex protection is necessary to ensure that we don't change m_globalScope
         // while WorkerThread::stop() is accessing it. Note that WorkerThread::stop() can
@@ -283,7 +283,7 @@ void WorkerOrWorkletThread::stop(Function<void()>&& stoppedCallback)
 
     // Ensure that tasks are being handled by thread event loop. If script execution weren't forbidden, a while(1) loop in JS could keep the thread alive forever.
     if (globalScope()) {
-        if (auto* script = globalScope()->script())
+        if (CheckedPtr script = globalScope()->script())
             script->scheduleExecutionTermination();
 
         if (is<WorkerMainRunLoop>(m_runLoop.get())) {

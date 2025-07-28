@@ -119,6 +119,7 @@ private:
 
     enum EventTargetInterfaceType eventTargetInterface() const final;
     ScriptExecutionContext* scriptExecutionContext() const final;
+    RefPtr<ScriptExecutionContext> protectedScriptExecutionContext() { return scriptExecutionContext(); }
     void refEventTarget() final { ref(); }
     void derefEventTarget() final { deref(); }
 

@@ -287,7 +287,6 @@ void Worker::createRTCRtpScriptTransformer(RTCRtpScriptTransform& transform, Mes
         if (RefPtr transformer = downcast<DedicatedWorkerGlobalScope>(context).createRTCRtpScriptTransformer(WTFMove(options)))
             transform->setTransformer(*transformer);
     });
-
 }
 #endif
 

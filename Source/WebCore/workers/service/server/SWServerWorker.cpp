@@ -93,9 +93,8 @@ RefPtr<SWServer> SWServerWorker::protectedServer() const
 
 ServiceWorkerContextData SWServerWorker::contextData() const
 {
-    ASSERT(m_registration);
-
-    return { std::nullopt, m_registration->data(), m_data.identifier, m_script, m_certificateInfo, m_contentSecurityPolicy, m_crossOriginEmbedderPolicy, m_referrerPolicy, m_data.scriptURL, m_data.type, false, m_lastNavigationWasAppInitiated, m_scriptResourceMap, m_registration->serviceWorkerPageIdentifier(), m_registration->navigationPreloadState() };
+    Ref registration = *m_registration;
+    return { std::nullopt, registration->data(), m_data.identifier, m_script, m_certificateInfo, m_contentSecurityPolicy, m_crossOriginEmbedderPolicy, m_referrerPolicy, m_data.scriptURL, m_data.type, false, m_lastNavigationWasAppInitiated, m_scriptResourceMap, registration->serviceWorkerPageIdentifier(), registration->navigationPreloadState() };
 }
 
 void SWServerWorker::updateAppInitiatedValue(LastNavigationWasAppInitiated lastNavigationWasAppInitiated)
@@ -303,8 +302,8 @@ void SWServerWorker::skipWaiting()
     m_isSkipWaitingFlagSet = true;
 
     ASSERT(m_registration || isTerminating());
-    if (m_registration)
-        m_registration->tryActivate();
+    if (RefPtr registration = m_registration.get())
+        registration->tryActivate();
 }
 
 void SWServerWorker::setHasPendingEvents(bool hasPendingEvents)

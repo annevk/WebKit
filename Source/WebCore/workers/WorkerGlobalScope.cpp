@@ -99,7 +99,7 @@ static HashSet<ScriptExecutionContextIdentifier>& allWorkerGlobalScopeIdentifier
     return identifiers;
 }
 
-static WorkQueue& sharedFileSystemStorageQueue()
+static WorkQueue& sharedFileSystemStorageQueueSingleton()
 {
     static NeverDestroyed<Ref<WorkQueue>> queue(WorkQueue::create("Shared File System Storage Queue"_s,  WorkQueue::QOS::Default));
     return queue.get();
@@ -154,7 +154,7 @@ WorkerGlobalScope::~WorkerGlobalScope()
     m_crypto = nullptr;
 
     // Notify proxy that we are going away. This can free the WorkerThread object, so do not access it after this.
-    if (auto* workerReportingProxy = thread().workerReportingProxy())
+    if (CheckedPtr workerReportingProxy = thread().workerReportingProxy())
         workerReportingProxy->workerGlobalScopeDestroyed();
 }
 
@@ -180,15 +180,16 @@ void WorkerGlobalScope::prepareForDestruction()
     if (m_storageConnection)
         m_storageConnection->scopeClosed();
 
-    if (m_fileSystemStorageConnection)
-        m_fileSystemStorageConnection->scopeClosed();
+    if (RefPtr fileSystemStorageConnection = m_fileSystemStorageConnection)
+        fileSystemStorageConnection->scopeClosed();
 }
 
 void WorkerGlobalScope::removeAllEventListeners()
 {
     WorkerOrWorkletGlobalScope::removeAllEventListeners();
-    m_performance->removeAllEventListeners();
-    m_performance->removeAllObservers();
+    Ref performance = *m_performance;
+    performance->removeAllEventListeners();
+    performance->removeAllObservers();
     m_reportingScope->removeAllObservers();
 }
 
@@ -229,7 +230,7 @@ RefPtr<RTCDataChannelRemoteHandlerConnection> WorkerGlobalScope::createRTCDataCh
 {
     RefPtr<RTCDataChannelRemoteHandlerConnection> connection;
     callOnMainThreadAndWait([workerThread = Ref { thread() }, &connection]() mutable {
-        if (auto* workerLoaderProxy = workerThread->workerLoaderProxy())
+        if (CheckedPtr workerLoaderProxy = workerThread->workerLoaderProxy())
             connection = workerLoaderProxy->createRTCDataChannelRemoteHandlerConnection();
     });
     ASSERT(connection);
@@ -275,7 +276,7 @@ WorkerStorageConnection& WorkerGlobalScope::storageConnection()
 
 void WorkerGlobalScope::postFileSystemStorageTask(Function<void()>&& task)
 {
-    sharedFileSystemStorageQueue().dispatch(WTFMove(task));
+    sharedFileSystemStorageQueueSingleton().dispatch(WTFMove(task));
 }
 
 WorkerFileSystemStorageConnection& WorkerGlobalScope::getFileSystemStorageConnection(Ref<FileSystemStorageConnection>&& mainThreadConnection)
@@ -283,7 +284,7 @@ WorkerFileSystemStorageConnection& WorkerGlobalScope::getFileSystemStorageConnec
     if (!m_fileSystemStorageConnection)
         m_fileSystemStorageConnection = WorkerFileSystemStorageConnection::create(*this, WTFMove(mainThreadConnection));
     else if (m_fileSystemStorageConnection->mainThreadConnection() != mainThreadConnection.ptr()) {
-        m_fileSystemStorageConnection->connectionClosed();
+        Ref { *m_fileSystemStorageConnection }->connectionClosed();
         m_fileSystemStorageConnection = WorkerFileSystemStorageConnection::create(*this, WTFMove(mainThreadConnection));
     }
 
@@ -315,7 +316,7 @@ void WorkerGlobalScope::close()
         ASSERT_WITH_SECURITY_IMPLICATION(is<WorkerGlobalScope>(context));
         WorkerGlobalScope& workerGlobalScope = downcast<WorkerGlobalScope>(context);
         // Notify parent that this context is closed. Parent is responsible for calling WorkerThread::stop().
-        if (auto* workerReportingProxy = workerGlobalScope.thread().workerReportingProxy())
+        if (CheckedPtr workerReportingProxy = workerGlobalScope.thread().workerReportingProxy())
             workerReportingProxy->workerGlobalScopeClosed();
     } });
 }
@@ -462,7 +463,7 @@ EventTarget* WorkerGlobalScope::errorEventTarget()
 
 void WorkerGlobalScope::logExceptionToConsole(const String& errorMessage, const String& sourceURL, int lineNumber, int columnNumber, RefPtr<ScriptCallStack>&&)
 {
-    if (auto* workerReportingProxy = thread().workerReportingProxy())
+    if (CheckedPtr workerReportingProxy = thread().workerReportingProxy())
         workerReportingProxy->postExceptionToWorkerObject(errorMessage, lineNumber, columnNumber, sourceURL);
 }
 
@@ -510,7 +511,7 @@ void WorkerGlobalScope::addMessage(MessageSource source, MessageLevel level, con
 std::optional<Vector<uint8_t>> WorkerGlobalScope::serializeAndWrapCryptoKey(CryptoKeyData&& keyData)
 {
     Ref protectedThis { *this };
-    auto* workerLoaderProxy = thread().workerLoaderProxy();
+    CheckedPtr workerLoaderProxy = thread().workerLoaderProxy();
     if (!workerLoaderProxy)
         return std::nullopt;
 
@@ -527,7 +528,7 @@ std::optional<Vector<uint8_t>> WorkerGlobalScope::serializeAndWrapCryptoKey(Cryp
 std::optional<Vector<uint8_t>> WorkerGlobalScope::unwrapCryptoKey(const Vector<uint8_t>& wrappedKey)
 {
     Ref protectedThis { *this };
-    auto* workerLoaderProxy = thread().workerLoaderProxy();
+    CheckedPtr workerLoaderProxy = thread().workerLoaderProxy();
     if (!workerLoaderProxy)
         return std::nullopt;
 
@@ -565,7 +566,7 @@ CacheStorageConnection& WorkerGlobalScope::cacheStorageConnection()
         callOnMainThreadAndWait([workerThread = Ref { thread() }, &mainThreadConnection]() mutable {
             if (workerThread->runLoop().terminated())
                 return;
-            if (auto* workerLoaderProxy = workerThread->workerLoaderProxy())
+            if (CheckedPtr workerLoaderProxy = workerThread->workerLoaderProxy())
                 mainThreadConnection = workerLoaderProxy->createCacheStorageConnection();
         });
         if (!mainThreadConnection) {
@@ -604,7 +605,7 @@ void WorkerGlobalScope::createImageBitmap(ImageBitmap::Source&& source, int sx, 
 CSSValuePool& WorkerGlobalScope::cssValuePool()
 {
     if (!m_cssValuePool)
-        m_cssValuePool = makeUnique<CSSValuePool>();
+        lazyInitialize(m_cssValuePool, makeUnique<CSSValuePool>());
     return *m_cssValuePool;
 }
 
@@ -706,7 +707,7 @@ void WorkerGlobalScope::addImportedScriptSourceProvider(const URL& url, ScriptBu
 
 void WorkerGlobalScope::reportErrorToWorkerObject(const String& errorMessage)
 {
-    if (auto* workerReportingProxy = thread().workerReportingProxy())
+    if (CheckedPtr workerReportingProxy = thread().workerReportingProxy())
         workerReportingProxy->reportErrorToWorkerObject(errorMessage);
 }
 
@@ -714,8 +715,8 @@ void WorkerGlobalScope::clearDecodedScriptData()
 {
     ASSERT(isContextThread());
 
-    if (m_mainScriptSourceProvider)
-        m_mainScriptSourceProvider->clearDecodedData();
+    if (RefPtr mainScriptSourceProvider = m_mainScriptSourceProvider.get())
+        mainScriptSourceProvider->clearDecodedData();
 
     for (auto& sourceProviders : m_importedScriptsSourceProviders.values()) {
         for (Ref sourceProvider : sourceProviders)
@@ -732,8 +733,10 @@ void WorkerGlobalScope::updateSourceProviderBuffers(const ScriptBuffer& mainScri
 {
     ASSERT(isContextThread());
 
-    if (mainScript && m_mainScriptSourceProvider)
-        m_mainScriptSourceProvider->tryReplaceScriptBuffer(mainScript);
+    if (mainScript) {
+        if (RefPtr mainScriptSourceProvider = m_mainScriptSourceProvider.get())
+            mainScriptSourceProvider->tryReplaceScriptBuffer(mainScript);
+    }
 
     for (auto& pair : importedScripts) {
         auto it = m_importedScriptsSourceProviders.find(pair.key);
