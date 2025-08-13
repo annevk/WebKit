@@ -134,6 +134,9 @@
         "has": {
             "argument": "required"
         },
+        "heading": {
+            "argument": "optional"
+        },
         "horizontal": {
             "comment": "For scrollbar styling.",
             "status": "non-standard"

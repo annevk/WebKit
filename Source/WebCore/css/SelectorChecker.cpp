@@ -976,6 +976,32 @@ bool SelectorChecker::checkOne(CheckingContext& checkingContext, LocalContext& c
                 return true;
             break;
         }
+        case CSSSelector::PseudoClass::Heading: {
+            if (!is<HTMLElement>(element))
+                return false;
+
+            int count = 0;
+            if (element.hasTagName(h1Tag))
+                count = 1;
+            else if (element.hasTagName(h2Tag))
+                count = 2;
+            else if (element.hasTagName(h3Tag))
+                count = 3;
+            else if (element.hasTagName(h4Tag))
+                count = 4;
+            else if (element.hasTagName(h5Tag))
+                count = 5;
+            else if (element.hasTagName(h6Tag))
+                count = 6;
+
+            if (!count)
+                return false;
+
+            if (!selector.argument().isNull())
+                return selector.matchNth(count);
+
+            return true;
+        }
         case CSSSelector::PseudoClass::NthOfType: {
             if (auto* parentElement = dynamicDowncast<Element>(element.parentNode())) {
                 auto relation = context.isSubjectOrAdjacentElement ? Style::Relation::ChildrenAffectedByForwardPositionalRules : Style::Relation::DescendantsAffectedByForwardPositionalRules;

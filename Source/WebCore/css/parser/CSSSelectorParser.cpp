@@ -849,6 +849,8 @@ std::unique_ptr<MutableCSSSelector> CSSSelectorParser::consumePseudo(CSSParserTo
             selector->setSelectorList(makeUnique<CSSSelectorList>(WTFMove(selectorList)));
             return selector;
         }
+        // FIXME: :heading is defined as <An+B>#, not <An+B>
+        case CSSSelector::PseudoClass::Heading:
         case CSSSelector::PseudoClass::NthChild:
         case CSSSelector::PseudoClass::NthLastChild:
         case CSSSelector::PseudoClass::NthOfType:
@@ -861,7 +863,9 @@ std::unique_ptr<MutableCSSSelector> CSSSelectorParser::consumePseudo(CSSParserTo
             selector->setArgument(serializeANPlusB(ab));
             if (!block.atEnd()) {
                 auto type = selector->pseudoClass();
-                if (type == CSSSelector::PseudoClass::NthOfType || type == CSSSelector::PseudoClass::NthLastOfType)
+                if (type == CSSSelector::PseudoClass::Heading
+                    || type == CSSSelector::PseudoClass::NthOfType
+                    || type == CSSSelector::PseudoClass::NthLastOfType)
                     return nullptr;
                 if (block.peek().type() != IdentToken)
                     return nullptr;
