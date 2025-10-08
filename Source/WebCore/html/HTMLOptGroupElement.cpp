@@ -131,7 +131,16 @@ String HTMLOptGroupElement::groupLabelText() const
     
 HTMLSelectElement* HTMLOptGroupElement::ownerSelectElement() const
 {
-    return dynamicDowncast<HTMLSelectElement>(parentNode());
+    if (!document().settings().htmlEnhancedSelectParsingEnabled())
+        return dynamicDowncast<HTMLSelectElement>(parentNode());
+
+    for (Ref ancestor : ancestorsOfType<HTMLElement>(*const_cast<HTMLOptGroupElement*>(this))) {
+        if (RefPtr select = dynamicDowncast<HTMLSelectElement>(ancestor))
+            return select.get();
+        if (is<HTMLOptGroupElement>(ancestor) || is<HTMLOptionElement>(ancestor) || is<HTMLHRElement>(ancestor))
+            return nullptr;
+    }
+    return nullptr;
 }
 
 bool HTMLOptGroupElement::accessKeyAction(bool)

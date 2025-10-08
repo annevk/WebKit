@@ -842,15 +842,56 @@ void HTMLSelectElement::recalcListItems(bool updateSelectedStates, AllowStyleInv
         }
     };
 
-    for (Ref child : childrenOfType<HTMLElement>(*const_cast<HTMLSelectElement*>(this))) {
-        if (is<HTMLOptGroupElement>(child.get())) {
-            m_listItems.append(&child.get());
-            for (Ref option : childrenOfType<HTMLOptionElement>(child.get()))
-                handleOptionElement(option);
-        } else if (RefPtr option = dynamicDowncast<HTMLOptionElement>(child.get()))
-            handleOptionElement(*option);
-        else if (is<HTMLHRElement>(child.get()))
-            m_listItems.append(&child.get());
+    if (document().settings().htmlEnhancedSelectParsingEnabled()) {
+        for (auto it = descendantsOfType<HTMLElement>(*const_cast<HTMLSelectElement*>(this)).begin(); it;) {
+            Ref descendant = *it;
+
+            if (RefPtr option = dynamicDowncast<HTMLOptionElement>(descendant.get())) {
+                handleOptionElement(*option);
+                it.traverseNextSkippingChildren();
+                continue;
+            }
+            if (is<HTMLOptGroupElement>(descendant)) {
+                m_listItems.append(descendant.ptr());
+                for (auto optGroupIt = descendantsOfType<HTMLElement>(descendant).begin(); optGroupIt;) {
+                    Ref optGroupDescendant = *optGroupIt;
+                    if (RefPtr option = dynamicDowncast<HTMLOptionElement>(optGroupDescendant)) {
+                        handleOptionElement(*option);
+                        optGroupIt.traverseNextSkippingChildren();
+                        continue;
+                    }
+                    if (is<HTMLOptGroupElement>(optGroupDescendant)) {
+                        optGroupIt.traverseNextSkippingChildren();
+                        continue;
+                    }
+                    optGroupIt.traverseNext();
+                }
+                it.traverseNextSkippingChildren();
+                continue;
+            }
+            if (is<HTMLHRElement>(descendant)) {
+                m_listItems.append(descendant.ptr());
+                it.traverseNextSkippingChildren();
+                continue;
+            }
+            if (is<HTMLSelectElement>(descendant)) {
+                it.traverseNextSkippingChildren();
+                continue;
+            }
+
+            it.traverseNext();
+        }
+    } else {
+        for (Ref child : childrenOfType<HTMLElement>(*const_cast<HTMLSelectElement*>(this))) {
+            if (is<HTMLOptGroupElement>(child.get())) {
+                m_listItems.append(&child.get());
+                for (Ref option : childrenOfType<HTMLOptionElement>(child.get()))
+                    handleOptionElement(option);
+            } else if (RefPtr option = dynamicDowncast<HTMLOptionElement>(child.get()))
+                handleOptionElement(*option);
+            else if (is<HTMLHRElement>(child.get()))
+                m_listItems.append(&child.get());
+        }
     }
 
     if (!foundSelected && m_size <= 1 && firstOption && !firstOption->selected())

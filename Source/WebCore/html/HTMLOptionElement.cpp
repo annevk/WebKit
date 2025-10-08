@@ -32,6 +32,7 @@
 #include "Document.h"
 #include "ElementAncestorIteratorInlines.h"
 #include "HTMLDataListElement.h"
+#include "HTMLHRElement.h"
 #include "HTMLNames.h"
 #include "HTMLOptGroupElement.h"
 #include "HTMLSelectElement.h"
@@ -269,11 +270,22 @@ void HTMLOptionElement::childrenChanged(const ChildChange& change)
 
 HTMLSelectElement* HTMLOptionElement::ownerSelectElement() const
 {
-    if (auto* parent = parentElement()) {
-        if (auto* select = dynamicDowncast<HTMLSelectElement>(*parent))
-            return select;
-        if (auto* optGroup = dynamicDowncast<HTMLOptGroupElement>(*parent))
+    if (!document().settings().htmlEnhancedSelectParsingEnabled()) {
+        if (RefPtr parent = parentElement()) {
+            if (RefPtr select = dynamicDowncast<HTMLSelectElement>(*parent))
+                return select.get();
+            if (RefPtr optGroup = dynamicDowncast<HTMLOptGroupElement>(*parent))
+                return optGroup->ownerSelectElement();
+        }
+        return nullptr;
+    }
+    for (Ref ancestor : ancestorsOfType<HTMLElement>(*const_cast<HTMLOptionElement*>(this))) {
+        if (RefPtr select = dynamicDowncast<HTMLSelectElement>(ancestor))
+            return select.get();
+        if (RefPtr optGroup = dynamicDowncast<HTMLOptGroupElement>(ancestor))
             return optGroup->ownerSelectElement();
+        if (is<HTMLOptionElement>(ancestor) || is<HTMLHRElement>(ancestor))
+            return nullptr;
     }
     return nullptr;
 }
@@ -306,9 +318,18 @@ void HTMLOptionElement::willResetComputedStyle()
 
 String HTMLOptionElement::textIndentedToRespectGroupLabel() const
 {
-    RefPtr parent = parentNode();
-    if (is<HTMLOptGroupElement>(parent))
-        return makeString("    "_s, label());
+    if (!document().settings().htmlEnhancedSelectParsingEnabled()) {
+        if (is<HTMLOptGroupElement>(parentNode()))
+            return makeString("    "_s, label());
+        return label();
+    }
+
+    for (Ref ancestor : ancestorsOfType<HTMLElement>(*this)) {
+        if (is<HTMLOptGroupElement>(ancestor))
+            return makeString("    "_s, label());
+        if (is<HTMLSelectElement>(ancestor) || is<HTMLOptionElement>(ancestor) || is<HTMLHRElement>(ancestor))
+            return label();
+    }
     return label();
 }
 
@@ -317,8 +338,18 @@ bool HTMLOptionElement::isDisabledFormControl() const
     if (ownElementDisabled())
         return true;
 
-    auto* parentOptGroup = dynamicDowncast<HTMLOptGroupElement>(parentNode());
-    return parentOptGroup && parentOptGroup->isDisabledFormControl();
+    if (!document().settings().htmlEnhancedSelectParsingEnabled()) {
+        auto* parentOptGroup = dynamicDowncast<HTMLOptGroupElement>(parentNode());
+        return parentOptGroup && parentOptGroup->isDisabledFormControl();
+    }
+
+    for (Ref ancestor : ancestorsOfType<HTMLElement>(*this)) {
+        if (RefPtr optGroup = dynamicDowncast<HTMLOptGroupElement>(ancestor))
+            return optGroup->isDisabledFormControl();
+        if (is<HTMLSelectElement>(ancestor) || is<HTMLOptionElement>(ancestor) || is<HTMLHRElement>(ancestor))
+            return false;
+    }
+    return false;
 }
 
 String HTMLOptionElement::collectOptionInnerText() const
