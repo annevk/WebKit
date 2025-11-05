@@ -35,8 +35,16 @@ class HTMLSelectedContentElement : public HTMLElement {
 public:
     static Ref<HTMLSelectedContentElement> create(const QualifiedName&, Document&);
 
+    bool isDisabled() { return m_isDisabled; }
+
 private:
     HTMLSelectedContentElement(Document&);
+
+    InsertedIntoAncestorResult insertedIntoAncestor(InsertionType, ContainerNode&) final;
+    void didFinishInsertingNode() final;
+    void removedFromAncestor(RemovalType, ContainerNode& oldParentOfRemovedTree) final;
+
+    bool m_isDisabled { false };
 };
 
 } // namespace WebCore

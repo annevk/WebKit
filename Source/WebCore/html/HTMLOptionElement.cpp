@@ -36,6 +36,7 @@
 #include "HTMLNames.h"
 #include "HTMLOptGroupElement.h"
 #include "HTMLSelectElement.h"
+#include "HTMLSelectedContentElement.h"
 #include "NodeName.h"
 #include "NodeRenderStyle.h"
 #include "NodeTraversal.h"
@@ -43,6 +44,7 @@
 #include "RenderMenuList.h"
 #include "RenderStyleInlines.h"
 #include "RenderTheme.h"
+#include "ScriptDisallowedScope.h"
 #include "ScriptElement.h"
 #include "StyleResolver.h"
 #include "Text.h"
@@ -120,6 +122,27 @@ void HTMLOptionElement::removedFromAncestor(RemovalType removalType, ContainerNo
 
     if (RefPtr select = std::exchange(m_ownerSelect, nullptr).get())
         select->setRecalcListItems();
+}
+
+void HTMLOptionElement::finishParsingChildren()
+{
+    if (!document().settings().htmlEnhancedSelectSelectedContentEnabled())
+        return;
+
+    ASSERT(document().settings().htmlEnhancedSelectParsingEnabled());
+
+    if (m_disabled || !selected())
+        return;
+
+    RefPtr select = m_ownerSelect.get();
+    if (!select)
+        return;
+
+    if (RefPtr selectedContent = select->enabledSelectedContent()) {
+        ScriptDisallowedScope::EventAllowedScope eventAllowedScope { *selectedContent };
+
+        cloneIntoSelectedContent(*selectedContent);
+    }
 }
 
 bool HTMLOptionElement::isFocusable() const
@@ -389,6 +412,17 @@ String HTMLOptionElement::collectOptionInnerText() const
 String HTMLOptionElement::collectOptionInnerTextCollapsingWhitespace() const
 {
     return collectOptionInnerText().trim(isASCIIWhitespace).simplifyWhiteSpace(isASCIIWhitespace);
+}
+
+void HTMLOptionElement::cloneIntoSelectedContent(HTMLSelectedContentElement& selectedContent)
+{
+    ASSERT(document().settings().htmlEnhancedSelectParsingEnabled());
+    ASSERT(document().settings().htmlEnhancedSelectSelectedContentEnabled());
+
+    NodeVector newChildren;
+    for (RefPtr child = firstChild(); child; child = child->nextSibling())
+        newChildren.append(child->cloneNode(true));
+    selectedContent.replaceChildrenWithoutValidityCheck(WTFMove(newChildren));
 }
 
 } // namespace

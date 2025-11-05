@@ -1289,6 +1289,17 @@ ExceptionOr<void> ContainerNode::replaceChildren(FixedVector<NodeOrString>&& vec
     return { };
 }
 
+void ContainerNode::replaceChildrenWithoutValidityCheck(NodeVector&& newChildren)
+{
+    ChildListMutationScope mutation(*this);
+    NodeVector removedChildren;
+    removeAllChildrenWithScriptAssertionMaybeAsync(ChildChange::Source::API, removedChildren, DeferChildrenChanged::No);
+    auto appendResult = insertChildrenBeforeWithoutPreInsertionValidityCheck(WTFMove(newChildren));
+    ASSERT_UNUSED(appendResult, !appendResult.hasException());
+    rebuildSVGExtensionsElementsIfNecessary();
+    dispatchSubtreeModifiedEvent();
+}
+
 HTMLCollection* ContainerNode::cachedHTMLCollection(CollectionType type)
 {
     return hasRareData() && rareData()->nodeLists() ? rareData()->nodeLists()->cachedCollection<HTMLCollection>(type) : nullptr;

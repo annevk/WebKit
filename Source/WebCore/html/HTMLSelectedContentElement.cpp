@@ -26,7 +26,10 @@
 #include "config.h"
 #include "HTMLSelectedContentElement.h"
 
+#include "HTMLElement.h"
 #include "HTMLNames.h"
+#include "HTMLOptionElement.h"
+#include "HTMLSelectElement.h"
 #include <wtf/TZoneMallocInlines.h>
 
 namespace WebCore {
@@ -44,6 +47,63 @@ HTMLSelectedContentElement::HTMLSelectedContentElement(Document& document)
 Ref<HTMLSelectedContentElement> HTMLSelectedContentElement::create(const QualifiedName&, Document& document)
 {
     return adoptRef(*new HTMLSelectedContentElement(document));
+}
+
+auto HTMLSelectedContentElement::insertedIntoAncestor(InsertionType insertionType, ContainerNode& parentOfInsertedTree) -> InsertedIntoAncestorResult
+{
+    HTMLElement::insertedIntoAncestor(insertionType, parentOfInsertedTree);
+
+    ASSERT(document().settings().htmlEnhancedSelectParsingEnabled());
+    ASSERT(document().settings().htmlEnhancedSelectSelectedContentEnabled());
+
+    if (insertionType.connectedToDocument)
+        return InsertedIntoAncestorResult::NeedsPostInsertionCallback;
+    return InsertedIntoAncestorResult::Done;
+}
+
+void HTMLSelectedContentElement::didFinishInsertingNode()
+{
+    RefPtr<HTMLSelectElement> nearestAncestorSelect;
+    m_isDisabled = false;
+    for (Ref ancestor : ancestorsOfType<HTMLElement>(*this)) {
+        if (RefPtr select = dynamicDowncast<HTMLSelectElement>(ancestor)) {
+            if (!nearestAncestorSelect)
+                nearestAncestorSelect = WTFMove(select);
+            else
+                m_isDisabled = true;
+            break;
+        }
+        if (is<HTMLOptionElement>(ancestor) || is<HTMLSelectedContentElement>(ancestor)) {
+            m_isDisabled = true;
+            break;
+        }
+    }
+    if (!nearestAncestorSelect || nearestAncestorSelect->multiple())
+        return;
+    nearestAncestorSelect->updateSelectedContent();
+    nearestAncestorSelect->clearNonPrimarySelectedContent();
+}
+
+void HTMLSelectedContentElement::removedFromAncestor(RemovalType removalType, ContainerNode& oldParentOfRemovedTree)
+{
+    HTMLElement::removedFromAncestor(removalType, oldParentOfRemovedTree);
+
+    ASSERT(document().settings().htmlEnhancedSelectParsingEnabled());
+    ASSERT(document().settings().htmlEnhancedSelectSelectedContentEnabled());
+
+    if (ancestorsOfType<HTMLSelectElement>(*this).first())
+        return;
+
+    // FIXME: inclusiveAncestorsOfType would be nice.
+    if (RefPtr select = dynamicDowncast<HTMLSelectElement>(oldParentOfRemovedTree)) {
+        select->updateSelectedContent();
+        return;
+    }
+
+    if (RefPtr select = ancestorsOfType<HTMLSelectElement>(oldParentOfRemovedTree).first()) {
+        select->updateSelectedContent();
+        return;
+    }
 }
 
 } // namespace WebCore

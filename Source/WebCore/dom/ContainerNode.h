@@ -145,6 +145,7 @@ public:
     ExceptionOr<void> prepend(FixedVector<NodeOrString>&&);
 
     ExceptionOr<void> replaceChildren(FixedVector<NodeOrString>&&);
+    void replaceChildrenWithoutValidityCheck(NodeVector&&);
 
     ExceptionOr<void> ensurePreInsertionValidity(Node& newChild, Node* refChild);
     ExceptionOr<void> ensurePreInsertionValidityForPhantomDocumentFragment(NodeVector& newChildren, Node* refChild = nullptr);

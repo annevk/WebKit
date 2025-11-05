@@ -49,6 +49,7 @@
 #include "HTMLOptGroupElement.h"
 #include "HTMLOptionsCollectionInlines.h"
 #include "HTMLParserIdioms.h"
+#include "HTMLSelectedContentElement.h"
 #include "KeyboardEvent.h"
 #include "LocalDOMWindow.h"
 #include "LocalFrameInlines.h"
@@ -59,6 +60,7 @@
 #include "RenderListBox.h"
 #include "RenderMenuList.h"
 #include "RenderTheme.h"
+#include "ScriptDisallowedScope.h"
 #include "Settings.h"
 #include <JavaScriptCore/ConsoleTypes.h>
 #include <wtf/TZoneMallocInlines.h>
@@ -751,6 +753,8 @@ void HTMLSelectElement::listBoxOnChange()
     }
 
     if (fireOnChange) {
+        if (document().settings().htmlEnhancedSelectSelectedContentEnabled())
+            updateSelectedContent();
         dispatchInputEvent();
         dispatchFormControlChangeEvent();
     }
@@ -939,6 +943,8 @@ int HTMLSelectElement::selectedIndex() const
 void HTMLSelectElement::setSelectedIndex(int index)
 {
     selectOption(index, DeselectOtherOptions);
+    if (document().settings().htmlEnhancedSelectSelectedContentEnabled())
+        updateSelectedContent();
 }
 
 void HTMLSelectElement::optionSelectionStateChanged(HTMLOptionElement& option, bool optionIsSelected)
@@ -1768,6 +1774,69 @@ ExceptionOr<void> HTMLSelectElement::showPicker()
 #endif
 
     return { };
+}
+
+void HTMLSelectElement::updateSelectedContent() const
+{
+    ASSERT(document().settings().htmlEnhancedSelectParsingEnabled());
+    ASSERT(document().settings().htmlEnhancedSelectSelectedContentEnabled());
+
+    RefPtr selectedContent = enabledSelectedContent();
+    if (!selectedContent)
+        return;
+
+    RefPtr selectedOption = [&] -> RefPtr<HTMLOptionElement> {
+        for (auto& element : listItems()) {
+            if (RefPtr option = dynamicDowncast<HTMLOptionElement>(*element)) {
+                if (option->selected())
+                    return option;
+            }
+        }
+        return nullptr;
+    }();
+
+    ScriptDisallowedScope::EventAllowedScope eventAllowedScope { *selectedContent };
+
+    if (!selectedOption)
+        selectedContent->removeChildren();
+    else
+        selectedOption->cloneIntoSelectedContent(*selectedContent);
+}
+
+RefPtr<HTMLSelectedContentElement> HTMLSelectElement::enabledSelectedContent() const
+{
+    ASSERT(document().settings().htmlEnhancedSelectParsingEnabled());
+    ASSERT(document().settings().htmlEnhancedSelectSelectedContentEnabled());
+
+    if (multiple())
+        return nullptr;
+
+    RefPtr selectedContent = descendantsOfType<HTMLSelectedContentElement>(*const_cast<HTMLSelectElement*>(this)).first();
+    if (selectedContent && !selectedContent->isDisabled())
+        return selectedContent;
+
+    return nullptr;
+}
+
+void HTMLSelectElement::clearNonPrimarySelectedContent() const
+{
+    bool seenFirst = false;
+    Vector<Ref<HTMLSelectedContentElement>> nonPrimaries;
+    for (Ref descendant : descendantsOfType<HTMLSelectedContentElement>(*const_cast<HTMLSelectElement*>(this))) {
+        if (!seenFirst)
+            seenFirst = true;
+        else
+            nonPrimaries.append(descendant);
+    }
+
+    if (nonPrimaries.isEmpty())
+        return;
+
+    for (Ref nonPrimary : nonPrimaries) {
+        ScriptDisallowedScope::EventAllowedScope eventAllowedScope { nonPrimary };
+
+        nonPrimary->removeChildren();
+    }
 }
 
 } // namespace

@@ -40,6 +40,8 @@ public:
     static Ref<HTMLOptionElement> create(const QualifiedName&, Document&);
     static ExceptionOr<Ref<HTMLOptionElement>> createForLegacyFactoryFunction(Document&, String&& text, const AtomString& value, bool defaultSelected, bool selected);
 
+    void finishParsingChildren() final;
+
     WEBCORE_EXPORT String text() const;
     void setText(String&&);
 
@@ -66,6 +68,8 @@ public:
 
     void setSelectedState(bool, AllowStyleInvalidation = AllowStyleInvalidation::Yes);
     bool selectedWithoutUpdate() const { return m_isSelected; }
+
+    void cloneIntoSelectedContent(HTMLSelectedContentElement&);
 
 private:
     HTMLOptionElement(const QualifiedName&, Document&);

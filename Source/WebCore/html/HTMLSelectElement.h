@@ -120,6 +120,10 @@ public:
 
     bool isDevolvableWidget() const override { return true; }
 
+    void updateSelectedContent() const;
+    RefPtr<HTMLSelectedContentElement> enabledSelectedContent() const;
+    void clearNonPrimarySelectedContent() const;
+
 protected:
     HTMLSelectElement(const QualifiedName&, Document&, HTMLFormElement*);
 
