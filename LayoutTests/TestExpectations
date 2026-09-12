@@ -2360,16 +2360,10 @@ webkit.org/b/187800 imported/w3c/web-platform-tests/custom-elements/Document-cre
 webkit.org/b/187800 imported/w3c/web-platform-tests/custom-elements/parser/parser-uses-create-an-element-for-a-token-svg.svg [ Skip ]
 
 # selectors
-imported/w3c/web-platform-tests/css/selectors/old-tests/css3-modsel-172a.xml [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/selectors/old-tests/css3-modsel-172b.xml [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/selectors/old-tests/css3-modsel-173a.xml [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/selectors/old-tests/css3-modsel-173b.xml [ ImageOnlyFailure ]
 webkit.org/b/185859 imported/w3c/web-platform-tests/css/selectors/focus-visible-002.html [ Skip ]
 webkit.org/b/185859 imported/w3c/web-platform-tests/css/selectors/focus-visible-003.html [ Skip ]
 webkit.org/b/185859 imported/w3c/web-platform-tests/css/selectors/focus-visible-004.html [ Skip ]
 webkit.org/b/217904 imported/w3c/web-platform-tests/css/selectors/is-where-visited.html [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/selectors/xml-class-selector.xml [ ImageOnlyFailure ]
-imported/w3c/web-platform-tests/css/selectors/case-insensitive-parent.html [ ImageOnlyFailure ]
 
 # This test is bit heavy for debug
 [ Debug ] imported/w3c/web-platform-tests/css/selectors/invalidation/has-complexity.html [ Skip ]
@@ -7755,9 +7749,8 @@ media/webkit-media-controls-not-visible-after-exiting-fullscreen.html [ Skip ]
 webkit.org/b/279297 fast/block/float/float-avoider-with-negative-margin.html [ ImageOnlyFailure ]
 webkit.org/b/298061 fast/block/crash-with-percent-padding.html [ Skip ]
 
-# imported/w3c/web-platform-tests/css/selectors/featureless-004/5.html are failures.
+# imported/w3c/web-platform-tests/css/selectors/featureless-004 is a failure.
 webkit.org/b/280685 imported/w3c/web-platform-tests/css/selectors/featureless-004.html [ ImageOnlyFailure ]
-webkit.org/b/280685 imported/w3c/web-platform-tests/css/selectors/featureless-005.html [ ImageOnlyFailure ]
 webkit.org/b/294638 imported/w3c/web-platform-tests/css/selectors/focus-visible-018-2.html [ Skip ]
 
 # Skip large regular expression tests on Debug to avoid timeout.
