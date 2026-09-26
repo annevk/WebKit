@@ -39,6 +39,15 @@
 @class WKFrameInfo;
 @class WKWebViewConfiguration;
 
+#if PLATFORM(MAC)
+// AppKit responder and Services methods that WKWebView implements but doesn't declare in its headers.
+@interface WKWebView (SiteIsolationTestUtilities) <NSServicesMenuRequestor>
+- (void)changeAttributes:(id)sender;
+- (void)changeSpelling:(id)sender;
+- (void)checkSpelling:(id)sender;
+@end
+#endif
+
 namespace TestWebKitAPI {
 
 class HTTPServer;

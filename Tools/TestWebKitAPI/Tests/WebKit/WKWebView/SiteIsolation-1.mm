@@ -37,6 +37,7 @@
 #import "Helpers/cocoa/TestNavigationDelegate.h"
 #import "Helpers/cocoa/TestWKWebView.h"
 #import "InstanceMethodSwizzler.h"
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <WebKit/WKUIDelegatePrivate.h>
 #import <WebKit/WKWebViewPrivate.h>
 #import <WebKit/WKWebViewPrivateForTesting.h>
@@ -46,14 +47,13 @@
 #import <WebKit/_WKTextInputContext.h>
 #endif
 
+#if ENABLE(MULTI_REPRESENTATION_HEIC)
+#import <UIFoundation/NSAdaptiveImageGlyph.h>
+#endif
+
 #if PLATFORM(MAC)
 #import "Helpers/mac/AppKitSPI.h"
-
-@interface WKWebView (SiteIsolationEditingCommands)
-- (void)changeAttributes:(id)sender;
-- (void)changeSpelling:(id)sender;
-- (void)checkSpelling:(id)sender;
-@end
+#import <WebCore/LegacyNSPasteboardTypes.h>
 
 // Stands in for the font panel's attribute converter, and always adds a single underline.
 @interface SiteIsolationUnderlineAttributeConverter : NSObject
@@ -439,5 +439,89 @@ TEST(SiteIsolation, SelectionChangesInCrossOriginIframeAreIgnoredDuringTextInter
 }
 
 #endif // PLATFORM(IOS_FAMILY)
+
+// Pasteboard, Services, and content insertion act on the focused frame's selection, so they must be sent to
+// the process containing the focused frame, and any pasteboard access must be granted to that process.
+
+#if PLATFORM(MAC)
+
+TEST(SiteIsolation, WriteSelectionToPasteboardInCrossOriginIframe)
+{
+    HTTPServer server({
+        { "/mainframe"_s, { mainFrameTextWithCrossOriginIframe } },
+        { "/iframe"_s, { "<body>subframe text</body>"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto [webView, navigationDelegate, childFrame] = webViewWithFocusedCrossOriginIframe(server);
+    setSelectionInFrame(webView.get(), childFrame.get(), @"getSelection().selectAllChildren(document.body)", _WKSelectionAttributeIsRange);
+
+    // Services ask for the selection with a synchronous request per type. Plain text and web archive data
+    // come from different messages, so check both. The main frame has no selection, so its process would
+    // return nothing for either.
+    RetainPtr stringPasteboard = [NSPasteboard pasteboardWithUniqueName];
+    [webView writeSelectionToPasteboard:stringPasteboard.get() types:@[ WebCore::legacyStringPasteboardTypeSingleton() ]];
+    EXPECT_WK_STREQ("subframe text", [stringPasteboard stringForType:WebCore::legacyStringPasteboardTypeSingleton()]);
+
+    RetainPtr dataPasteboard = [NSPasteboard pasteboardWithUniqueName];
+    [webView writeSelectionToPasteboard:dataPasteboard.get() types:@[ UTTypeWebArchive.identifier ]];
+    EXPECT_GT([dataPasteboard dataForType:UTTypeWebArchive.identifier].length, 0U);
+
+    [stringPasteboard releaseGlobally];
+    [dataPasteboard releaseGlobally];
+}
+
+TEST(SiteIsolation, ReadSelectionFromPasteboardInCrossOriginIframe)
+{
+    HTTPServer server({
+        { "/mainframe"_s, { mainFrameTextWithCrossOriginIframe } },
+        { "/iframe"_s, { "<body contenteditable>original text</body>"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto [webView, navigationDelegate, childFrame] = webViewWithFocusedCrossOriginIframe(server);
+    setSelectionInFrame(webView.get(), childFrame.get(), @"getSelection().selectAllChildren(document.body)", _WKSelectionAttributeIsRange);
+
+    RetainPtr pasteboard = [NSPasteboard pasteboardWithUniqueName];
+    [pasteboard clearContents];
+    [pasteboard setString:@"pasted text" forType:NSPasteboardTypeString];
+
+    // This fails if the request goes to the main frame's process, which has no selection. It also fails if
+    // the iframe's process isn't granted access to the pasteboard, in which case it reads nothing.
+    EXPECT_TRUE([webView readSelectionFromPasteboard:pasteboard.get()]);
+    EXPECT_TRUE(Util::waitFor([&] {
+        return [[webView stringByEvaluatingJavaScript:@"document.body.textContent" inFrame:childFrame.get()] isEqualToString:@"pasted text"];
+    }));
+
+    [pasteboard releaseGlobally];
+}
+
+#endif // PLATFORM(MAC)
+
+#if ENABLE(MULTI_REPRESENTATION_HEIC)
+
+TEST(SiteIsolation, InsertAdaptiveImageGlyphInCrossOriginIframe)
+{
+    HTTPServer server({
+        { "/mainframe"_s, { mainFrameTextWithCrossOriginIframe } },
+        { "/iframe"_s, { "<body contenteditable>subframe text</body>"_s } }
+    }, HTTPServer::Protocol::HttpsProxy);
+
+    auto [webView, navigationDelegate, childFrame] = webViewWithFocusedCrossOriginIframe(server);
+    setSelectionInFrame(webView.get(), childFrame.get(), @"getSelection().setPosition(document.body.firstChild, 8)", _WKSelectionAttributeIsCaret);
+
+    RetainPtr data = [NSData dataWithContentsOfURL:[NSBundle.test_resourcesBundle URLForResource:@"adaptive-image-glyph" withExtension:@"heic"]];
+    RetainPtr adaptiveImageGlyph = adoptNS([[NSAdaptiveImageGlyph alloc] initWithImageContent:data.get()]);
+#if PLATFORM(MAC)
+    [(id<NSTextInputClient>)webView.get() insertAdaptiveImageGlyph:adaptiveImageGlyph.get() replacementRange:NSMakeRange(0, 0)];
+#else
+    RetainPtr range = adoptNS([[UITextRange alloc] init]);
+    [[webView textInputContentView] insertAdaptiveImageGlyph:adaptiveImageGlyph.get() replacementRange:range.get()];
+#endif
+
+    EXPECT_TRUE(Util::waitFor([&] {
+        return [[webView objectByEvaluatingJavaScript:@"!!document.querySelector('picture')" inFrame:childFrame.get()] boolValue];
+    }));
+}
+
+#endif // ENABLE(MULTI_REPRESENTATION_HEIC)
 
 } // namespace TestWebKitAPI
