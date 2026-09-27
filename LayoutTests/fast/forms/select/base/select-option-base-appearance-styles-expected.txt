@@ -15,6 +15,12 @@ PASS groupStyle(nativeMultipleFirst).borderBlockStartStyle is "none"
 PASS optionStyle(nativeMultipleSecond).display is "block"
 PASS optionStyle(nativeMultipleSecond).paddingInlineStart is "0px"
 PASS groupStyle(nativeMultipleSecond).borderBlockStartStyle is "none"
+PASS optionStyle(nativeDropdownFirst).display is "block"
+PASS optionStyle(nativeDropdownFirst).paddingInlineStart is "0px"
+PASS groupStyle(nativeDropdownFirst).borderBlockStartStyle is "none"
+PASS optionStyle(nativeDropdownSecond).display is "block"
+PASS optionStyle(nativeDropdownSecond).paddingInlineStart is "0px"
+PASS groupStyle(nativeDropdownSecond).borderBlockStartStyle is "none"
 PASS optionStyle(baseListBoxFirst).display is "flex"
 PASS optionStyle(baseListBoxFirst).alignItems is "center"
 PASS groupStyle(baseListBoxFirst).borderBlockStartStyle is "solid"
@@ -27,6 +33,21 @@ PASS groupStyle(baseDropdownFirst).borderBlockStartStyle is "solid"
 PASS optionStyle(baseDropdownSecond).display is "flex"
 PASS optionStyle(baseDropdownSecond).alignItems is "center"
 PASS groupStyle(baseDropdownSecond).borderBlockStartStyle is "solid"
+PASS optionStyle(baseSingleDropdownFirst).display is "flex"
+PASS optionStyle(baseSingleDropdownFirst).alignItems is "center"
+PASS groupStyle(baseSingleDropdownFirst).borderBlockStartStyle is "solid"
+PASS optionStyle(baseSingleDropdownSecond).display is "flex"
+PASS optionStyle(baseSingleDropdownSecond).alignItems is "center"
+PASS groupStyle(baseSingleDropdownSecond).borderBlockStartStyle is "solid"
+PASS getComputedStyle(nativeDropdownFirst.options[1]).cursor is not 'not-allowed'
+PASS getComputedStyle(nativeDropdownSecond.options[1]).cursor is not 'not-allowed'
+PASS getComputedStyle(baseSingleDropdownFirst.options[1]).cursor is "not-allowed"
+PASS getComputedStyle(baseSingleDropdownSecond.options[1]).cursor is "not-allowed"
+PASS checkmarkContent(nativeDropdownFirst).includes("✓") is false
+PASS checkmarkContent(nativeDropdownSecond).includes("✓") is false
+PASS checkmarkContent(nativeListBoxFirst).includes("✓") is false
+PASS checkmarkContent(baseSingleDropdownFirst).includes("✓") is true
+PASS checkmarkContent(baseListBoxFirst).includes("✓") is true
 PASS getComputedStyle(nested).appearance is "auto"
 PASS optionStyle(nested).display is "block"
 PASS optionStyle(nested).paddingInlineStart is "0px"
