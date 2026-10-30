@@ -1,0 +1,15 @@
+This test verifies that text blobs are UTF-8 decoded when written to the clipboard: a UTF-8 byte order mark is stripped and a UTF-16 one is not used. To run the test manually, click the Copy button and then the Paste button, three times.
+
+On success, you will see a series of "PASS" messages, followed by "TEST COMPLETE".
+
+
+Text starting with a UTF-16LE byte order mark:
+PASS getType("text/plain") resolved to "��PA"
+Text starting with a UTF-16BE byte order mark:
+PASS getType("text/plain") resolved to "��PA"
+Text starting with a UTF-8 byte order mark:
+PASS getType("text/plain") resolved to "PA"
+PASS successfullyParsed is true
+
+TEST COMPLETE
+

@@ -1,0 +1,68 @@
+<!DOCTYPE html> <!-- webkit-test-runner [ useFlexibleViewport=true AsyncClipboardAPIEnabled=true ] -->
+<html>
+    <meta charset="utf8">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+        <script src="../../resources/js-test.js"></script>
+        <script src="../../resources/ui-helper.js"></script>
+        <script src="./resources/async-clipboard-helpers.js"></script>
+        <style>
+            button {
+                width: 100px;
+                padding: 1em;
+            }
+        </style>
+    </head>
+    <script>
+        jsTestIsAsync = true;
+
+        description("This test verifies that text blobs are UTF-8 decoded when written to the clipboard: a UTF-8 byte order mark is stripped and a UTF-16 one is not used. To run the test manually, click the Copy button and then the Paste button, three times.");
+
+        // Each case writes a single item, as not all platforms support multiple clipboard items.
+        const cases = [
+            { description: "Text starting with a UTF-16LE byte order mark:", bytes: "\xFF\xFEPA", expected: "\uFFFD\uFFFDPA" },
+            { description: "Text starting with a UTF-16BE byte order mark:", bytes: "\xFE\xFFPA", expected: "\uFFFD\uFFFDPA" },
+            { description: "Text starting with a UTF-8 byte order mark:", bytes: "\xEF\xBB\xBFPA", expected: "PA" },
+        ];
+        let currentCase = 0;
+        let doneWriting = false;
+        let doneReading = false;
+
+        addEventListener("load", async function() {
+            const copyButton = document.getElementById("copy");
+            const pasteButton = document.getElementById("paste");
+
+            copyButton.addEventListener("click", async () => {
+                await navigator.clipboard.write([ new ClipboardItem({ "text/plain" : Promise.resolve(textBlob(cases[currentCase].bytes)) }) ]);
+                doneWriting = true;
+            });
+
+            pasteButton.addEventListener("click", async () => {
+                const [item] = await navigator.clipboard.read();
+                debug(cases[currentCase].description);
+                await checkClipboardItemString(item, "text/plain", cases[currentCase].expected);
+                doneReading = true;
+            });
+
+            if (!window.testRunner)
+                return;
+
+            for (currentCase = 0; currentCase < cases.length; ++currentCase) {
+                doneWriting = false;
+                doneReading = false;
+                await UIHelper.activateElement(copyButton);
+                await UIHelper.waitForCondition(() => doneWriting);
+                await UIHelper.activateElement(pasteButton);
+                await UIHelper.waitForCondition(() => doneReading);
+            }
+
+            copyButton.remove();
+            pasteButton.remove();
+            finishJSTest();
+        });
+    </script>
+    <body>
+        <button id="copy">Copy</button>
+        <button id="paste">Paste</button>
+    </body>
+</html>
